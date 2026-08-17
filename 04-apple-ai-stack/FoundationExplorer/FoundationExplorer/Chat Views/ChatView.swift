@@ -29,6 +29,7 @@
 /// THE SOFTWARE.
 
 import SwiftUI
+import FoundationModels
 
 struct ChatView: View {
   @State private var promptText = ""
@@ -106,8 +107,16 @@ struct ChatView: View {
     addMessage(promptText, type: .prompt)
 
     // Clear prompt
-    addMessage(promptText, type: .fullResponse)
-    promptText = ""
+    let session = LanguageModelSession()
+    
+    do {
+      let modelResponse = try await session.respond(to: promptText)
+      promptText = ""
+      addMessage(modelResponse.content, type: .fullResponse)
+    } catch {
+      let errorResponse = "Error: \(error.localizedDescription)"
+      addMessage(errorResponse, type: .error)
+    }
   }
 }
 
