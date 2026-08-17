@@ -1,0 +1,14 @@
+{
+  "images" : [
+    {
+      "filename" : "app-icon-white-0A6A47-bg.png",
+      "idiom" : "universal",
+      "platform" : "ios",
+      "size" : "1024x1024"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}
