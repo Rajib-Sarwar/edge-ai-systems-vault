@@ -32,6 +32,7 @@ import SwiftUI
 
 enum MessageType {
   case prompt
+  case partialResponse
   case fullResponse
   case error
 }
@@ -41,11 +42,19 @@ struct Message: Identifiable, Equatable {
   var text: String
   var type: MessageType
   var timestamp: Date
+  var tokens: Int?
 
-  init(id: UUID, text: String, type: MessageType, timestamp: Date) {
+  init(
+    id: UUID,
+    text: String,
+    type: MessageType,
+    timestamp: Date,
+    tokens: Int? = nil
+  ) {
     self.id = id
     self.text = text
     self.type = type
     self.timestamp = timestamp
+    self.tokens = tokens
   }
 }

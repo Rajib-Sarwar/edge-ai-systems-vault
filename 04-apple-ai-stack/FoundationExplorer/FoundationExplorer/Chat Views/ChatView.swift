@@ -37,6 +37,8 @@ struct ChatView: View {
   @FocusState private var isTextFieldFocused: Bool
   @State private var session = LanguageModelSession()
   @State private var confirmClear: Bool = false
+  private var contextWindow = SystemLanguageModel.default.contextSize
+  @State private var contextWindowSize: Int?
 
   @ToolbarContentBuilder private var appToolbar: some ToolbarContent {
     ToolbarSpacer(.flexible, placement: .bottomBar)
@@ -99,6 +101,15 @@ struct ChatView: View {
           sendAction: sendPrompt
         )
         .disabled(session.isResponding)
+        
+        if let tokenCount = contextWindowSize {
+          Text("Context Window: \(tokenCount)/\(contextWindow) tokens.")
+            .font(.footnote)
+        } else {
+          Text("Context Window: \(contextWindow) tokens.")
+            .font(.footnote)
+        }
+
       }
       .navigationTitle("Foundation Explorer")
       .navigationBarTitleDisplayMode(.inline)
@@ -113,19 +124,30 @@ struct ChatView: View {
   }
 
   private func addMessage(_ message: String, type: MessageType, animate: Bool = true) {
-    let newMessage = Message(
-      id: UUID(),
-      text: message,
-      type: type,
-      timestamp: Date()
-    )
+    Task {
+      var tokens: Int?
 
-    if animate {
-      withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
+      if type == .prompt || type == .fullResponse {
+        tokens = await tokenCount(for: message)
+      } else {
+        tokens = nil
+      }
+      
+      let newMessage = Message(
+        id: UUID(),
+        text: message,
+        type: type,
+        timestamp: Date(),
+        tokens: tokens
+      )
+      
+      if animate {
+        withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
+          messages.append(newMessage)
+        }
+      } else {
         messages.append(newMessage)
       }
-    } else {
-      messages.append(newMessage)
     }
   }
 
@@ -135,20 +157,63 @@ struct ChatView: View {
     // Append prompt to messages
     addMessage(promptText, type: .prompt)
     
+    let stream = session.streamResponse(to: promptText)
+    promptText = ""
+    
+    // 1
     do {
-      let modelResponse = try await session.respond(to: promptText)
-      promptText = ""
-      addMessage(modelResponse.content, type: .fullResponse)
+      // 2
+      for try await partialResponse in stream {
+        // 3
+        if messages.last?.type != .partialResponse {
+          // 4
+          addMessage(
+            partialResponse.content,
+            type: .partialResponse
+          )
+        } else {
+          // 5
+          messages[messages.count - 1].text = partialResponse.content
+        }
+      }
+      
+      let lastIndex = messages.count - 1
+      withAnimation(.easeInOut) {
+        messages[lastIndex].type = .fullResponse
+      }
+      messages[lastIndex].timestamp = Date.now
+      messages[lastIndex].tokens = await tokenCount(for: messages[lastIndex].text)
+
     } catch {
-      let errorResponse = "Error: \(error.localizedDescription)"
-      addMessage(errorResponse, type: .error)
+      // 6
+      addMessage(error.localizedDescription, type: .error)
     }
+    await updatedContextWindowUsed()
   }
   
   private func resetChatHistory() {
     messages = []
     session = LanguageModelSession()
   }
+  
+  // 1
+  private func updatedContextWindowUsed() async {
+    // 2
+    guard #available(iOS 26.4, macOS 26.4, *) else {
+      contextWindowSize = nil
+      return
+    }
+    // 3
+    contextWindowSize = try? await SystemLanguageModel.default.tokenCount(
+      for: session.transcript
+    )
+  }
+  
+  private func tokenCount(for text: String) async -> Int? {
+    guard #available(iOS 26.4, macOS 26.4, *) else { return nil }
+    return try? await SystemLanguageModel.default.tokenCount(for: Prompt(text))
+  }
+
 }
 
 
