@@ -4,10 +4,10 @@
 /// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 /// copies of the Software, and to permit persons to whom the Software is
 /// furnished to do so, subject to the following conditions:
-///
+/// 
 /// The above copyright notice and this permission notice shall be included in
 /// all copies or substantial portions of the Software.
-///
+/// 
 /// Notwithstanding the foregoing, you may not use, copy, modify, merge, publish,
 /// distribute, sublicense, create a derivative work, and/or sell copies of the
 /// Software in any work that is designed, intended, or marketed for pedagogical or
@@ -15,7 +15,7 @@
 /// or information technology.  Permission for such use, copying, modification,
 /// merger, publication, distribution, sublicensing, creation of derivative works,
 /// or sale is expressly withheld.
-///
+/// 
 /// This project and source code may use libraries or frameworks that are
 /// released under various Open-Source licenses. Use of those libraries and
 /// frameworks are governed by their own individual licenses.
@@ -29,6 +29,7 @@
 /// THE SOFTWARE.
 
 import SwiftUI
+import FoundationModels
 
 struct MessageBubble: View {
   let message: Message
@@ -38,14 +39,14 @@ struct MessageBubble: View {
     case .prompt:
       return .blue
       
-    case .partialResponse:
-      return Color.gray.mix(with: .white, by: 0.8)
-      
     case .fullResponse:
       return .gray.mix(with: .white, by: 0.4)
-      
+
     case .error:
       return .red
+
+    case .partialResponse:
+      return Color.gray.mix(with: .white, by: 0.8)
     }
   }
   
@@ -54,14 +55,14 @@ struct MessageBubble: View {
     case .prompt:
       return .white
       
-    case .partialResponse:
-      return Color.primary
-      
     case .fullResponse:
       return .primary
-      
+
     case .error:
       return .white
+
+    case .partialResponse:
+      return Color.primary
     }
   }
   
@@ -70,7 +71,7 @@ struct MessageBubble: View {
       if message.type == .prompt {
         Spacer(minLength: 60)
       }
-      
+
       VStack(alignment: message.type == .prompt ? .trailing : .leading, spacing: 4) {
         Text(LocalizedStringKey(message.text))
           .font(.body)
@@ -86,11 +87,12 @@ struct MessageBubble: View {
             Text("\(tokens) tokens")
           }
           Text(message.timestamp, style: .time)
-        }.font(.caption2)
-          .foregroundColor(.secondary)
-          .padding(.horizontal, 4)
+        }
+        .font(.caption2)
+        .foregroundColor(.secondary)
+        .padding(.horizontal, 4)
       }
-      
+
       if message.type != .prompt {
         Spacer(minLength: 60)
       }

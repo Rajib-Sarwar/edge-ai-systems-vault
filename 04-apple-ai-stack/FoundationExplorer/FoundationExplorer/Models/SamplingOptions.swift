@@ -4,10 +4,10 @@
 /// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 /// copies of the Software, and to permit persons to whom the Software is
 /// furnished to do so, subject to the following conditions:
-///
+/// 
 /// The above copyright notice and this permission notice shall be included in
 /// all copies or substantial portions of the Software.
-///
+/// 
 /// Notwithstanding the foregoing, you may not use, copy, modify, merge, publish,
 /// distribute, sublicense, create a derivative work, and/or sell copies of the
 /// Software in any work that is designed, intended, or marketed for pedagogical or
@@ -15,7 +15,7 @@
 /// or information technology.  Permission for such use, copying, modification,
 /// merger, publication, distribution, sublicensing, creation of derivative works,
 /// or sale is expressly withheld.
-///
+/// 
 /// This project and source code may use libraries or frameworks that are
 /// released under various Open-Source licenses. Use of those libraries and
 /// frameworks are governed by their own individual licenses.
@@ -28,28 +28,34 @@
 /// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 /// THE SOFTWARE.
 
-import SwiftUI
-import FoundationModels
+import Foundation
 
-struct ModelUnavailableView: View {
-  var reason: SystemLanguageModel.Availability.UnavailableReason
+enum SampleType: String, CaseIterable, Identifiable {
+  case system
+  case greedy
+  case top
+  case threshold
 
-  var body: some View {
-    Image(systemName: "apple.intelligence")
-      .font(.largeTitle)
-    switch reason {
-    case .deviceNotEligible:
-      Text("Apple Intelligence is not available on this device.")
-    case .appleIntelligenceNotEnabled:
-      Text("Apple Intelligence is available, but not enabled on this device.")
-    case .modelNotReady:
-      Text("The model isn't ready. This is usually because it is still downloading.")
-    @unknown default:
-      Text("An unknown error prevents Apple Intelligence from working.")
+  var id: String { rawValue }
+  var title: String {
+    switch self {
+    case .system: return "System"
+    case .greedy: return "Greedy"
+    case .top: return "Top"
+    case .threshold: return "Threshold"
     }
   }
 }
 
-#Preview {
-  ModelUnavailableView(reason: .appleIntelligenceNotEnabled)
+struct SamplingOptions {
+  var type: SampleType
+  var threshold: Double
+  var top: Int
+  var seed: UInt64?
+}
+
+struct PromptSettings {
+  var instructions: String?
+  var temperature: Double?
+  var sampling: SamplingOptions = .init(type: .system, threshold: 0, top: 10, seed: nil)
 }
