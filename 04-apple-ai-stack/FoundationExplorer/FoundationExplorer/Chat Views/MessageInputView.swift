@@ -65,6 +65,16 @@ struct MessageInputView: View {
             }
             .transition(.scale.combined(with: .opacity))
           }
+          
+          if isTextFieldFocused {
+            Button(action: { isTextFieldFocused = false }) {
+              Image(systemName: "keyboard.chevron.compact.down")
+                .font(.title2)
+                .foregroundColor(.gray)
+                .accessibilityLabel("Hide Keyboard")
+            }
+            .transition(.scale.combined(with: .opacity))
+          }
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
@@ -115,4 +125,3 @@ struct MessageInputView: View {
     print("Message \(messageText) sent.")
   }
 }
-

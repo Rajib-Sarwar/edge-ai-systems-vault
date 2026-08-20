@@ -128,6 +128,12 @@ struct ChatView: View {
       .sheet(isPresented: $showSettings) {
         ConfigurationView(settings: $promptSettings)
       }
+      .onChange(of: promptSettings.instructions) {
+        Task {
+          resetChatHistory()
+          await updatedContextWindowUsed()
+        }
+      }
     }
   }
 
@@ -164,7 +170,36 @@ struct ChatView: View {
 
     addMessage(promptText, type: .prompt)
 
-    let stream = session.streamResponse(to: promptText)
+    let samplingOptions = promptSettings.sampling
+    var sampling: GenerationOptions.SamplingMode?
+    // 1
+    switch samplingOptions.type {
+    // 2
+    case .system:
+      sampling = nil
+    // 3
+    case .greedy:
+      sampling = GenerationOptions.SamplingMode.greedy
+    // 4
+    case .top:
+      sampling = GenerationOptions.SamplingMode.random(
+        top: samplingOptions.top,
+        seed: samplingOptions.seed
+      )
+    // 5
+    case .threshold:
+      sampling = GenerationOptions.SamplingMode.random(
+        probabilityThreshold: samplingOptions.threshold,
+        seed: samplingOptions.seed
+      )
+    }
+
+    
+    let options = GenerationOptions(
+      sampling: sampling,
+      temperature: promptSettings.temperature
+    )
+    let stream = session.streamResponse(to: promptText, options: options)
     promptText = ""
 
     do {
@@ -204,7 +239,11 @@ struct ChatView: View {
 
   private func resetChatHistory() {
     messages = []
-    session = LanguageModelSession()
+    if let instructions = promptSettings.instructions {
+      session = LanguageModelSession(instructions: instructions)
+    } else {
+      session = LanguageModelSession()
+    }
   }
   
   private func updatedContextWindowUsed() async {
